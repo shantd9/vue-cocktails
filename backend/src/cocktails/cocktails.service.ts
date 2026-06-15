@@ -1,7 +1,10 @@
-import {Injectable, NotFoundException} from '@nestjs/common';
+import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
+import { DatabaseError } from 'pg';
 import { Cocktails } from './cocktails.entity';
+
+const PG_UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class CocktailsService {
@@ -24,8 +27,21 @@ export class CocktailsService {
     return cocktail
   }
 
-  create(cocktail: Cocktails) {
-    return this.usersRepository.insert(cocktail);
+  async create(cocktail: Cocktails) {
+    try {
+      return await this.usersRepository.insert(cocktail);
+    } catch (err) {
+      if (
+        err instanceof QueryFailedError &&
+        (err.driverError as DatabaseError).code === PG_UNIQUE_VIOLATION
+      ) {
+        throw new ConflictException(
+          `A cocktail named "${cocktail.title}" already exists`,
+        );
+      }
+
+      throw err;
+    }
   }
 
 }

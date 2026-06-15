@@ -1,5 +1,7 @@
 <template>
   <div>
+    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="success" class="success">{{ success }}</p>
     <form @submit.prevent="submitForm">
       <div>
         <label for="title">Title:</label>
@@ -27,11 +29,15 @@ export default {
         title: '',
         price: '',
         description: ''
-      }
+      },
+      error: null,
+      success: null
     };
   },
   methods: {
     async submitForm() {
+      this.error = null;
+      this.success = null;
       try {
         const response = await fetch('http://localhost:3000/cocktails', {
           method: 'POST',
@@ -42,19 +48,34 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error(await this.extractErrorMessage(response));
         }
 
         const data = await response.json();
         console.log('Form submitted successfully:', data);
+        this.success = 'Cocktail created!';
         // Clear the form
         this.form.title = '';
         this.form.price = '';
         this.form.description = '';
       } catch (error) {
         console.error('There was an error submitting the form:', error);
-        // Handle the error (e.g., show an error message)
+        this.error = error.message;
       }
+    },
+    async extractErrorMessage(response) {
+      try {
+        const body = await response.json();
+        if (Array.isArray(body.message)) {
+          return body.message.join(', ');
+        }
+        if (body.message) {
+          return body.message;
+        }
+      } catch (e) {
+        // response body was not JSON
+      }
+      return `Request failed with status ${response.status}`;
     }
   }
 };
@@ -87,5 +108,15 @@ button {
 }
 button:hover {
   background-color: #0056b3;
+}
+.error {
+  max-width: 400px;
+  margin: 0 auto 10px;
+  color: #b30000;
+}
+.success {
+  max-width: 400px;
+  margin: 0 auto 10px;
+  color: #1a7f37;
 }
 </style>
