@@ -7,14 +7,41 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import {
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Cocktails } from './cocktails.entity';
 import { CocktailsService } from './cocktails.service';
 
+@ApiTags('cocktails')
 @Controller('cocktails')
 export class CocktailsController {
   constructor(private readonly cocktailsService: CocktailsService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'List cocktails',
+    description:
+      'Returns all cocktails. Optionally filters by a case-insensitive substring match on the description.',
+  })
+  @ApiQuery({
+    name: 'description',
+    required: false,
+    description: 'Case-insensitive substring to match against the description.',
+    example: 'tequila',
+  })
+  @ApiOkResponse({
+    description: 'The matching cocktails.',
+    type: Cocktails,
+    isArray: true,
+  })
   searchCocktails(
     @Query('description') description?: string,
   ): Promise<Cocktails[]> {
@@ -22,6 +49,14 @@ export class CocktailsController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a cocktail by id' })
+  @ApiParam({
+    name: 'id',
+    description: 'Unique identifier of the cocktail.',
+    example: 1,
+  })
+  @ApiOkResponse({ description: 'The requested cocktail.', type: Cocktails })
+  @ApiNotFoundResponse({ description: 'No cocktail exists with the given id.' })
   async getCocktail(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<Cocktails> {
@@ -29,6 +64,14 @@ export class CocktailsController {
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a cocktail' })
+  @ApiCreatedResponse({
+    description: 'The cocktail was created successfully.',
+    type: Boolean,
+  })
+  @ApiConflictResponse({
+    description: 'A cocktail with the same title already exists.',
+  })
   async newCocktail(@Body() cocktail: Cocktails) {
     console.log("info: creating cocktail", cocktail)
     const res = await this.cocktailsService.create(cocktail);
