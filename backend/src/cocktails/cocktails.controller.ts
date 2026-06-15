@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { Cocktails } from './cocktails.entity';
 import { CocktailsService } from './cocktails.service';
 
@@ -9,6 +16,13 @@ export class CocktailsController {
   @Get()
   searchCocktails() : Promise<Cocktails[]> {
     return this.cocktailsService.findAll();
+  }
+
+  @Get(':id')
+  async getCocktail(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Cocktails> {
+    return this.cocktailsService.findOne(id);
   }
 
   @Post()
