@@ -27,25 +27,26 @@ export class CocktailsController {
 
   @Get()
   @ApiOperation({
-    summary: 'List cocktails',
+    summary: 'Search cocktails',
     description:
-      'Returns all cocktails. Optionally filters by a case-insensitive substring match on the description.',
+      'Returns all cocktails, or — when "q" is provided — the best fuzzy, ' +
+      'typo-tolerant matches across title, description and glass type, ranked ' +
+      'by relevance.',
   })
   @ApiQuery({
-    name: 'description',
+    name: 'q',
     required: false,
-    description: 'Case-insensitive substring to match against the description.',
-    example: 'tequila',
+    description:
+      'Fuzzy search term matched against title, description and glass type.',
+    example: 'mojto',
   })
   @ApiOkResponse({
     description: 'The matching cocktails.',
     type: Cocktails,
     isArray: true,
   })
-  searchCocktails(
-    @Query('description') description?: string,
-  ): Promise<Cocktails[]> {
-    return this.cocktailsService.findAll(description);
+  searchCocktails(@Query('q') q?: string): Promise<Cocktails[]> {
+    return this.cocktailsService.findAll(q);
   }
 
   @Get(':id')

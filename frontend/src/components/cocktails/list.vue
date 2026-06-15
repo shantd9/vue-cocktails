@@ -1,8 +1,13 @@
 <template>
   <div>
     <h1>Cocktails List</h1>
-    <label for="search">Search by description:</label>
-    <input type="text" id="search" v-model="search" />
+    <label for="search">Search:</label>
+    <input
+      type="text"
+      id="search"
+      v-model="search"
+      placeholder="Try a name, ingredient…"
+    />
     <div v-if="loading">Loading...</div>
     <div v-else-if="error">{{ error }}</div>
     <div v-else-if="data.length === 0">No cocktails match your search.</div>
@@ -37,7 +42,7 @@ export default {
       try {
         const url = new URL('http://localhost:3000/cocktails');
         if (search.value.trim()) {
-          url.searchParams.set('description', search.value.trim());
+          url.searchParams.set('q', search.value.trim());
         }
         const response = await fetch(url);
         if (!response.ok) {
