@@ -20,7 +20,7 @@
 
 <script>
 export default {
-  name: 'ListCocktail',
+  name: 'CocktailNew',
   data() {
     return {
       form: {
