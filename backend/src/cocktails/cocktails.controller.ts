@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { Cocktails } from './cocktails.entity';
 import { CocktailsService } from './cocktails.service';
@@ -14,8 +15,10 @@ export class CocktailsController {
   constructor(private readonly cocktailsService: CocktailsService) {}
 
   @Get()
-  searchCocktails() : Promise<Cocktails[]> {
-    return this.cocktailsService.findAll();
+  searchCocktails(
+    @Query('description') description?: string,
+  ): Promise<Cocktails[]> {
+    return this.cocktailsService.findAll(description);
   }
 
   @Get(':id')

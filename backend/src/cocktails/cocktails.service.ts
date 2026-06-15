@@ -1,6 +1,6 @@
 import {ConflictException, Injectable, NotFoundException} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { ILike, QueryFailedError, Repository } from 'typeorm';
 import { DatabaseError } from 'pg';
 import { Cocktails } from './cocktails.entity';
 
@@ -13,7 +13,13 @@ export class CocktailsService {
     private usersRepository: Repository<Cocktails>,
   ) {}
 
-  findAll(): Promise<Cocktails[]> {
+  findAll(description?: string): Promise<Cocktails[]> {
+    if (description) {
+      return this.usersRepository.find({
+        where: { description: ILike(`%${description}%`) },
+      });
+    }
+
     return this.usersRepository.find();
   }
 
