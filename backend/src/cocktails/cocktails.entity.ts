@@ -1,16 +1,20 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'cocktails' })
+@Unique('q_unique_title', ['title'])
 export class Cocktails {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 100 })
   title: string;
 
-  @Column()
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column()
+  @Column({ name: 'glasstype', type: 'text', nullable: true })
+  glassType: string;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
   price: number;
 }
