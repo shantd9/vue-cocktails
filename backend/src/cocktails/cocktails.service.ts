@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, QueryFailedError, Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { DatabaseError } from 'pg';
 import { Cocktails } from './cocktails.entity';
 import { ElasticSearch } from '../elasticsearch.service';
@@ -35,15 +35,18 @@ export class CocktailsService implements OnModuleInit {
   async findAll(q?: string): Promise<Cocktails[]> {
     if (q) {
       try {
+        throw Error("error")
         return await this.search.searchCocktails(q);
       } catch (err) {
         this.logger.error(
-          'Elasticsearch query failed; falling back to a DB substring search',
+          'Elasticsearch query failed; getting all from the db.',
           err,
         );
-        return this.usersRepository.find({
-          where: [{ title: ILike(`%${q}%`) }, { description: ILike(`%${q}%`) }],
-        });
+        return this.usersRepository
+          .createQueryBuilder('c')
+          .where('LOWER(c.title) LIKE LOWER(:q)', { q: `%${q}%` })
+          .orWhere('LOWER(c.description) LIKE LOWER(:q)', { q: `%${q}%` })
+          .getMany();
       }
     }
 
