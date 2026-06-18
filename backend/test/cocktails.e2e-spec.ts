@@ -113,10 +113,8 @@ describe('Cocktails API (integration)', () => {
   });
 
   it('GET /cocktails?q= falls back to a DB substring search when Elasticsearch is down', async () => {
-    // Simulate Elasticsearch being unavailable for this one request.
     elasticStub.searchCocktails.mockRejectedValueOnce(new Error('ES unavailable'));
 
-    // Upper-case query proves the fallback is case-insensitive (LOWER LIKE LOWER).
     const res = await request(app.getHttpServer())
       .get('/cocktails?q=MOJ')
       .expect(200);

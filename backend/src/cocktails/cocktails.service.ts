@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Cocktails } from './cocktails.entity';
 import { ElasticSearch } from '../elasticsearch.service';
 
@@ -60,20 +60,24 @@ export class CocktailsService implements OnModuleInit {
   }
 
   async create(cocktail: Cocktails) {
-    // Using the repository to check for duplicates, in addition to the unique constraint on the database
-    const existing = await this.usersRepository.findOneBy({
-      title: cocktail.title,
-    });
-    if (existing) {
-      throw new ConflictException(
-        `A cocktail named "${cocktail.title}" already exists`,
-      );
+    try {
+      const result = await this.usersRepository.insert(cocktail);
+      //indexing the new cocktail so we can use it in the search immediately without restarting
+      const id = result.identifiers[0]?.id;
+      await this.search.indexCocktail({ ...cocktail, id });
+      return result;
+    } catch (err) {
+      if (this.isUniqueViolation(err)) {
+        throw new ConflictException(
+          `A cocktail named "${cocktail.title}" already exists`,
+        );
+      }
+      throw err;
     }
+  }
 
-    const result = await this.usersRepository.insert(cocktail);
-    //indexing the new cocktail so we can use it in the search immediately without restarting
-    const id = result.identifiers[0]?.id;
-    await this.search.indexCocktail({ ...cocktail, id });
-    return result;
+  //works for both postgres and the in memory sqlite. in production, I'd use a more robust solution
+  private isUniqueViolation(err: unknown): boolean {
+    return err instanceof QueryFailedError && /unique/i.test(err.message);
   }
 }
