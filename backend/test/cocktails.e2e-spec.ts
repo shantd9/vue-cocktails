@@ -109,7 +109,20 @@ describe('Cocktails API (integration)', () => {
     await request(app.getHttpServer())
         .post('/cocktails')
         .send(newCocktail)
-        .expect(500);
+        .expect(409);
+  });
 
+  it('GET /cocktails?q= falls back to a DB substring search when Elasticsearch is down', async () => {
+    // Simulate Elasticsearch being unavailable for this one request.
+    elasticStub.searchCocktails.mockRejectedValueOnce(new Error('ES unavailable'));
+
+    // Upper-case query proves the fallback is case-insensitive (LOWER LIKE LOWER).
+    const res = await request(app.getHttpServer())
+      .get('/cocktails?q=MOJ')
+      .expect(200);
+
+    const titles = res.body.map((c: Cocktails) => c.title);
+    expect(titles).toContain('Virgin Mojito');
+    expect(titles).not.toContain('Shirley Temple');
   });
 });

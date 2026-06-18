@@ -6,12 +6,9 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
-import { DatabaseError } from 'pg';
+import { Repository } from 'typeorm';
 import { Cocktails } from './cocktails.entity';
 import { ElasticSearch } from '../elasticsearch.service';
-
-const PG_UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class CocktailsService implements OnModuleInit {
@@ -35,7 +32,6 @@ export class CocktailsService implements OnModuleInit {
   async findAll(q?: string): Promise<Cocktails[]> {
     if (q) {
       try {
-        throw Error("error")
         return await this.search.searchCocktails(q);
       } catch (err) {
         this.logger.error(
@@ -64,23 +60,20 @@ export class CocktailsService implements OnModuleInit {
   }
 
   async create(cocktail: Cocktails) {
-    try {
-      const result = await this.usersRepository.insert(cocktail);
-      // Index the new cocktail immediately so it's searchable without a restart.
-      const id = result.identifiers[0]?.id;
-      await this.search.indexCocktail({ ...cocktail, id });
-      return result;
-    } catch (err) {
-      if (
-        err instanceof QueryFailedError &&
-        (err.driverError as DatabaseError).code === PG_UNIQUE_VIOLATION
-      ) {
-        throw new ConflictException(
-          `A cocktail named "${cocktail.title}" already exists`,
-        );
-      }
-
-      throw err;
+    // Using the repository to check for duplicates, in addition to the unique constraint on the database
+    const existing = await this.usersRepository.findOneBy({
+      title: cocktail.title,
+    });
+    if (existing) {
+      throw new ConflictException(
+        `A cocktail named "${cocktail.title}" already exists`,
+      );
     }
+
+    const result = await this.usersRepository.insert(cocktail);
+    //indexing the new cocktail so we can use it in the search immediately without restarting
+    const id = result.identifiers[0]?.id;
+    await this.search.indexCocktail({ ...cocktail, id });
+    return result;
   }
 }
