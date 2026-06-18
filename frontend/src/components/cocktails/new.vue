@@ -51,15 +51,12 @@ export default {
           throw new Error(await this.extractErrorMessage(response));
         }
 
-        const data = await response.json();
-        console.log('Form submitted successfully:', data);
         this.success = 'Cocktail created!';
         // Clear the form
         this.form.title = '';
         this.form.price = '';
         this.form.description = '';
       } catch (error) {
-        console.error('There was an error submitting the form:', error);
         this.error = error.message;
       }
     },

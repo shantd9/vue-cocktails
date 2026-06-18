@@ -74,9 +74,7 @@ export class CocktailsController {
     description: 'A cocktail with the same title already exists.',
   })
   async newCocktail(@Body() cocktail: Cocktails) {
-    console.log("info: creating cocktail", cocktail)
-    const res = await this.cocktailsService.create(cocktail);
-    console.log("res", res);
+    await this.cocktailsService.create(cocktail);
     return true;
   }
 }
